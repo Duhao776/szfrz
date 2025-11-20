@@ -1,0 +1,121 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="grid">
+    <div class="card">
+        <h2>Biometric Registration</h2>
+        <div
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 200px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+            <div style="text-align: center; color: white;">
+                <div style="font-size: 4rem;">👤</div>
+                <div id="regFaceId" style="font-family: 'Fira Code', monospace; font-size: 0.8rem; margin-top: 0.5rem;">
+                    Face ID: Not Generated</div>
+            </div>
+        </div>
+        <input type="text" id="regUser" placeholder="Username to Register" value="alice">
+        <button id="btnGenerate" class="btn btn-outline" style="margin-bottom: 0.5rem;">Generate Simulated Face
+            Data</button>
+        <button id="btnRegister" class="btn">Register Biometric</button>
+        <div id="regMsg" style="margin-top: 1rem;"></div>
+    </div>
+
+    <div class="card">
+        <h2>Biometric Login</h2>
+        <div
+            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); height: 200px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+            <div style="text-align: center; color: white;">
+                <div style="font-size: 4rem;">🔐</div>
+                <div id="authFaceId"
+                    style="font-family: 'Fira Code', monospace; font-size: 0.8rem; margin-top: 0.5rem;">Face ID: Not
+                    Generated</div>
+            </div>
+        </div>
+        <input type="text" id="authUser" placeholder="Username to Verify" value="alice">
+        <button id="btnUseSame" class="btn btn-outline" style="margin-bottom: 0.5rem;">✓ Use Registered Face
+            Data</button>
+        <button id="btnGenerateAuth" class="btn btn-outline" style="margin-bottom: 0.5rem;">✗ Generate Different Face
+            Data</button>
+        <button id="btnVerify" class="btn">Verify Identity</button>
+        <div id="authMsg" style="margin-top: 1rem;"></div>
+    </div>
+</div>
+
+<script>
+    let registrationFaceData = null;
+    let authenticationFaceData = null;
+
+    // Generate simulated biometric data
+    function generateFaceData() {
+        // Generate a random "face ID" - in reality this would be feature vectors
+        const faceId = 'FACE_' + Math.random().toString(36).substring(2, 15).toUpperCase();
+        const features = Array.from({ length: 128 }, () => Math.random().toFixed(4));
+        return {
+            faceId: faceId,
+            features: features.join(',')
+        };
+    }
+
+    document.getElementById('btnGenerate').addEventListener('click', () => {
+        registrationFaceData = generateFaceData();
+        document.getElementById('regFaceId').textContent = 'Face ID: ' + registrationFaceData.faceId;
+        document.getElementById('regMsg').textContent = 'Face data generated! Ready to register.';
+        document.getElementById('regMsg').className = 'status-success';
+    });
+
+    // Use the same face data as registration (simulating the same person)
+    document.getElementById('btnUseSame').addEventListener('click', () => {
+        if (!registrationFaceData) {
+            alert('Please generate and register face data first!');
+            return;
+        }
+        authenticationFaceData = registrationFaceData;
+        document.getElementById('authFaceId').textContent = 'Face ID: ' + authenticationFaceData.faceId;
+        document.getElementById('authMsg').textContent = '✓ Using same face data as registration (legitimate user).';
+        document.getElementById('authMsg').className = 'status-success';
+    });
+
+    document.getElementById('btnGenerateAuth').addEventListener('click', () => {
+        authenticationFaceData = generateFaceData();
+        document.getElementById('authFaceId').textContent = 'Face ID: ' + authenticationFaceData.faceId;
+        document.getElementById('authMsg').textContent = '⚠️ Generated different face data (different person).';
+        document.getElementById('authMsg').className = 'status-fail';
+    });
+
+    document.getElementById('btnRegister').addEventListener('click', async () => {
+        const user = document.getElementById('regUser').value;
+        if (!user) return alert('Enter username');
+        if (!registrationFaceData) return alert('Generate face data first!');
+
+        const res = await fetch('/exp3/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: user,
+                image: registrationFaceData.features
+            })
+        });
+        const data = await res.json();
+        document.getElementById('regMsg').textContent = data.message + ' (ID: ' + registrationFaceData.faceId + ')';
+        document.getElementById('regMsg').className = 'status-success';
+    });
+
+    document.getElementById('btnVerify').addEventListener('click', async () => {
+        const user = document.getElementById('authUser').value;
+        if (!user) return alert('Enter username');
+        if (!authenticationFaceData) return alert('Generate or select face data first!');
+
+        const res = await fetch('/exp3/api/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: user,
+                image: authenticationFaceData.features
+            })
+        });
+        const data = await res.json();
+        const msg = document.getElementById('authMsg');
+        msg.textContent = data.message;
+        msg.className = data.success ? 'status-success' : 'status-fail';
+    });
+</script>
+{% endblock %}

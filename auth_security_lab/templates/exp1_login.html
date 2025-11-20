@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 400px; margin: 0 auto;">
+    <h2>Login</h2>
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" value="admin">
+        <input type="password" id="password" placeholder="Password">
+        <button type="submit" class="btn">Sign In</button>
+    </form>
+    <div id="message" style="margin-top: 1rem; text-align: center;"></div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+
+        const res = await fetch('/exp1/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, password: p })
+        });
+
+        const data = await res.json();
+        const msg = document.getElementById('message');
+        msg.textContent = data.message;
+        msg.className = data.success ? 'status-success' : 'status-fail';
+        msg.style.display = 'inline-block';
+    });
+</script>
+{% endblock %}

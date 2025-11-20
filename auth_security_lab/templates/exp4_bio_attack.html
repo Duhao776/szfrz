@@ -1,0 +1,176 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="grid">
+    <div class="card">
+        <h2>Step 1: Setup Victim Account</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+            First, simulate registering a victim's biometric data.
+        </p>
+        <div
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 120px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+            <div style="text-align: center; color: white;">
+                <div style="font-size: 3rem;">👤</div>
+                <div id="victimFaceId"
+                    style="font-family: 'Fira Code', monospace; font-size: 0.75rem; margin-top: 0.5rem;">Not Registered
+                </div>
+            </div>
+        </div>
+        <input type="text" id="victimUser" placeholder="Victim Username" value="alice">
+        <button id="btnSetupVictim" class="btn">Register Victim's Biometric</button>
+        <div id="setupMsg" style="margin-top: 1rem;"></div>
+    </div>
+
+    <div class="card">
+        <h2>Step 2: Intercept Biometric Data</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">
+            Simulate intercepting the victim's biometric data.
+        </p>
+        <div
+            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); height: 120px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+            <div style="text-align: center; color: white;">
+                <div style="font-size: 3rem;">🎭</div>
+                <div id="capturedId"
+                    style="font-family: 'Fira Code', monospace; font-size: 0.75rem; margin-top: 0.5rem;">No Data
+                    Captured</div>
+            </div>
+        </div>
+        <button id="btnCapture" class="btn btn-danger">Intercept Victim's Face Data</button>
+        <div id="captureMsg" style="margin-top: 1rem;"></div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 2rem;">
+    <h2>Step 3: Replay Attack</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        Use the intercepted biometric data to impersonate the victim.
+    </p>
+    <input type="text" id="attackUser" placeholder="Target Username" value="alice">
+    <button id="btnReplay" class="btn btn-danger">Execute Replay Attack</button>
+    <div id="attackMsg" style="margin-top: 1rem;"></div>
+
+    <div class="log-window" id="attackLog" style="margin-top: 1rem;">
+        <div class="log-entry">Waiting for attack to start...</div>
+    </div>
+</div>
+
+<script>
+    let victimBiometricData = null;
+    let capturedBiometricData = null;
+
+    function log(message, color = 'white') {
+        const logDiv = document.getElementById('attackLog');
+        logDiv.innerHTML += `<div class="log-entry" style="color: ${color}">${message}</div>`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    // Generate simulated biometric data
+    function generateFaceData() {
+        const faceId = 'FACE_' + Math.random().toString(36).substring(2, 15).toUpperCase();
+        const features = Array.from({ length: 128 }, () => Math.random().toFixed(4));
+        return {
+            faceId: faceId,
+            features: features.join(',')
+        };
+    }
+
+    // Step 1: Setup victim account
+    document.getElementById('btnSetupVictim').addEventListener('click', async () => {
+        const user = document.getElementById('victimUser').value;
+        if (!user) {
+            alert('Enter victim username');
+            return;
+        }
+
+        // Generate victim's biometric data
+        victimBiometricData = generateFaceData();
+
+        log('[SETUP] Registering victim account: ' + user, 'var(--primary)');
+        log('[SETUP] Generated Face ID: ' + victimBiometricData.faceId, 'var(--text-muted)');
+
+        // Register the victim
+        const res = await fetch('/exp3/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: user,
+                image: victimBiometricData.features
+            })
+        });
+
+        const data = await res.json();
+
+        document.getElementById('victimFaceId').textContent = victimBiometricData.faceId;
+        document.getElementById('setupMsg').textContent = '✓ Victim account registered successfully!';
+        document.getElementById('setupMsg').className = 'status-success';
+
+        log('[SETUP] ' + data.message, 'var(--success)');
+    });
+
+    // Step 2: Intercept biometric data
+    document.getElementById('btnCapture').addEventListener('click', () => {
+        if (!victimBiometricData) {
+            alert('Please setup victim account first!');
+            return;
+        }
+
+        // Simulate intercepting the victim's biometric data
+        // In a real attack, this would be obtained through various means
+        capturedBiometricData = victimBiometricData;
+
+        document.getElementById('capturedId').textContent = capturedBiometricData.faceId;
+        document.getElementById('captureMsg').textContent = '⚠️ Biometric data intercepted!';
+        document.getElementById('captureMsg').className = 'status-fail';
+
+        log('[INTERCEPT] Biometric data captured from victim', 'var(--danger)');
+        log('[INTERCEPT] Captured Face ID: ' + capturedBiometricData.faceId, 'var(--text-muted)');
+        log('[INTERCEPT] Feature vector: 128 dimensions', 'var(--text-muted)');
+    });
+
+    // Step 3: Replay attack
+    document.getElementById('btnReplay').addEventListener('click', async () => {
+        if (!capturedBiometricData) {
+            alert('Please intercept biometric data first!');
+            return;
+        }
+
+        const user = document.getElementById('attackUser').value;
+        if (!user) {
+            alert('Enter target username');
+            return;
+        }
+
+        log('[ATTACK] ═══════════════════════════════', 'var(--danger)');
+        log('[ATTACK] Initiating replay attack...', 'var(--danger)');
+        log('[ATTACK] Target user: ' + user, 'var(--danger)');
+        log('[ATTACK] Using captured Face ID: ' + capturedBiometricData.faceId, 'var(--danger)');
+
+        await new Promise(r => setTimeout(r, 800));
+
+        const res = await fetch('/exp3/api/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: user,
+                image: capturedBiometricData.features
+            })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            log('[SUCCESS] ✓✓✓ Authentication bypassed! Access granted. ✓✓✓', 'var(--success)');
+            log('[VULNERABILITY] The system accepted replayed biometric data!', 'yellow');
+            log('[EXPLANATION] The system cannot distinguish between live and replayed data.', 'var(--text-muted)');
+            log('[MITIGATION] Real systems use liveness detection (blink, movement, etc.).', 'var(--text-muted)');
+            document.getElementById('attackMsg').textContent = '🚨 Attack Successful! System compromised.';
+            document.getElementById('attackMsg').className = 'status-success';
+        } else {
+            log('[FAILED] ✗ Authentication rejected.', 'var(--danger)');
+            log('[INFO] The captured biometric does not match the target user.', 'var(--text-muted)');
+            document.getElementById('attackMsg').textContent = 'Attack failed - biometric mismatch.';
+            document.getElementById('attackMsg').className = 'status-fail';
+        }
+    });
+</script>
+{% endblock %}

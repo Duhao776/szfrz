@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <h2>SSL/TLS Handshake Simulation</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        This simulation demonstrates the SSL/TLS handshake protocol used for secure authentication and encryption.
+    </p>
+
+    <button id="btnStart" class="btn">Start SSL Handshake</button>
+
+    <div class="log-window" id="handshakeLog" style="height: 400px;">
+        <div class="log-entry">Ready to simulate SSL/TLS handshake...</div>
+    </div>
+
+    <div id="status" style="margin-top: 1rem; text-align: center;"></div>
+</div>
+
+<script>
+    function log(step, actor, action, details) {
+        const logDiv = document.getElementById('handshakeLog');
+        logDiv.innerHTML += `
+        <div class="log-entry">
+            <span class="log-step">Step ${step}:</span>
+            <span class="log-actor">[${actor}]</span>
+            <strong>${action}</strong>
+            <br>
+            <span style="color: var(--text-muted); margin-left: 3rem;">${details}</span>
+        </div>
+    `;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    document.getElementById('btnStart').addEventListener('click', async () => {
+        const logDiv = document.getElementById('handshakeLog');
+        logDiv.innerHTML = '<div class="log-entry">Initiating SSL/TLS Handshake...</div>';
+
+        const res = await fetch('/exp5/api/handshake');
+        const steps = await res.json();
+
+        for (let i = 0; i < steps.length; i++) {
+            await new Promise(r => setTimeout(r, 800));
+            const s = steps[i];
+            log(s.step, s.actor, s.action, s.details);
+        }
+
+        await new Promise(r => setTimeout(r, 500));
+        logDiv.innerHTML += `
+        <div class="log-entry" style="color: var(--success); font-weight: bold; margin-top: 1rem;">
+            ✓ SSL/TLS Handshake Complete
+        </div>
+        <div class="log-entry" style="color: var(--text-muted);">
+            Secure channel established. All further communication is encrypted.
+        </div>
+    `;
+        logDiv.scrollTop = logDiv.scrollHeight;
+
+        document.getElementById('status').innerHTML = '<span class="status-success">Handshake Successful</span>';
+    });
+</script>
+{% endblock %}

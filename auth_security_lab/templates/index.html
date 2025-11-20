@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="grid">
+    <div class="card">
+        <h2>Exp 1: Authentication</h2>
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+            Implement simple username/password authentication.
+        </p>
+        <a href="/exp1/" class="btn">Launch Experiment</a>
+    </div>
+
+    <div class="card">
+        <h2>Exp 2: Auth Attack</h2>
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+            Simulate a dictionary attack against the authentication system.
+        </p>
+        <a href="/exp2/" class="btn btn-danger">Launch Attack</a>
+    </div>
+
+    <div class="card">
+        <h2>Exp 3: Biometric Auth</h2>
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+            Face verification simulation using webcam capture.
+        </p>
+        <a href="/exp3/" class="btn">Launch Experiment</a>
+    </div>
+
+    <div class="card">
+        <h2>Exp 4: Bio Attack</h2>
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+            Replay attack simulation against biometric authentication.
+        </p>
+        <a href="/exp4/" class="btn btn-danger">Launch Attack</a>
+    </div>
+
+    <div class="card">
+        <h2>Exp 5: SSL Handshake</h2>
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+            Visual simulation of the SSL/TLS handshake protocol.
+        </p>
+        <a href="/exp5/" class="btn">Launch Experiment</a>
+    </div>
+
+    <div class="card">
+        <h2>Exp 6: SSL Attack</h2>
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+            Simulate a Man-in-the-Middle (MITM) SSL stripping attack.
+        </p>
+        <a href="/exp6/" class="btn btn-danger">Launch Attack</a>
+    </div>
+</div>
+{% endblock %}

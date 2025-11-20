@@ -1,0 +1,76 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <h2>SSL/TLS MITM Attack Simulation</h2>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+        This demonstrates a Man-in-the-Middle attack with SSL stripping / cipher downgrade.
+    </p>
+
+    <button id="btnAttack" class="btn btn-danger">Launch MITM Attack</button>
+
+    <div class="log-window" id="attackLog" style="height: 400px;">
+        <div class="log-entry">Ready to simulate SSL/TLS attack...</div>
+    </div>
+
+    <div id="status" style="margin-top: 1rem; text-align: center;"></div>
+</div>
+
+<script>
+    function log(step, actor, action, details, color = 'white') {
+        const logDiv = document.getElementById('attackLog');
+        logDiv.innerHTML += `
+        <div class="log-entry">
+            <span class="log-step">Step ${step}:</span>
+            <span class="log-actor" style="color: ${color}">[${actor}]</span>
+            <strong>${action}</strong>
+            <br>
+            <span style="color: var(--text-muted); margin-left: 3rem;">${details}</span>
+        </div>
+    `;
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    document.getElementById('btnAttack').addEventListener('click', async () => {
+        const logDiv = document.getElementById('attackLog');
+        logDiv.innerHTML = '<div class="log-entry" style="color: var(--danger);">Initiating MITM Attack...</div>';
+
+        const res = await fetch('/exp6/api/mitm_handshake');
+        const steps = await res.json();
+
+        for (let i = 0; i < steps.length; i++) {
+            await new Promise(r => setTimeout(r, 1000));
+            const s = steps[i];
+
+            let color = 'white';
+            if (s.actor === 'Attacker' || s.actor.includes('Attacker')) {
+                color = 'var(--danger)';
+            } else if (s.actor === 'Client') {
+                color = 'var(--primary)';
+            } else if (s.actor === 'Server') {
+                color = 'var(--success)';
+            } else if (s.actor === 'System') {
+                color = 'yellow';
+            }
+
+            log(s.step, s.actor, s.action, s.details, color);
+        }
+
+        await new Promise(r => setTimeout(r, 500));
+        logDiv.innerHTML += `
+        <div class="log-entry" style="color: var(--danger); font-weight: bold; margin-top: 1rem;">
+            ⚠️ ATTACK SUCCESSFUL
+        </div>
+        <div class="log-entry" style="color: yellow;">
+            The attacker successfully downgraded the connection to use weak encryption.
+        </div>
+        <div class="log-entry" style="color: var(--text-muted);">
+            Mitigation: Use HSTS, certificate pinning, and disable weak cipher suites.
+        </div>
+    `;
+        logDiv.scrollTop = logDiv.scrollHeight;
+
+        document.getElementById('status').innerHTML = '<span class="status-fail">System Compromised</span>';
+    });
+</script>
+{% endblock %}

