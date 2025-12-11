@@ -5,6 +5,7 @@ from blueprints.exp3 import exp3_bp
 from blueprints.exp4 import exp4_bp
 from blueprints.exp5 import exp5_bp
 from blueprints.exp6 import exp6_bp
+from blueprints.exp7 import exp7_bp
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -16,10 +17,11 @@ app.register_blueprint(exp3_bp, url_prefix='/exp3')
 app.register_blueprint(exp4_bp, url_prefix='/exp4')
 app.register_blueprint(exp5_bp, url_prefix='/exp5')
 app.register_blueprint(exp6_bp, url_prefix='/exp6')
+app.register_blueprint(exp7_bp, url_prefix='/exp7')
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)

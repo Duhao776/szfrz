@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security Labs</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Fira+Code&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Fira+Code&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -22,15 +25,17 @@
                 <a href="/exp4/" class="nav-link">Exp 4: Bio Attack</a>
                 <a href="/exp5/" class="nav-link">Exp 5: SSL</a>
                 <a href="/exp6/" class="nav-link">Exp 6: SSL Attack</a>
+                <a href="/exp7/" class="nav-link">Exp 7: WebAuthn</a>
             </div>
         </header>
-        
+
         <main>
             {% block content %}{% endblock %}
         </main>
     </div>
-    
+
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>
