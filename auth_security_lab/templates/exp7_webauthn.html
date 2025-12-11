@@ -33,13 +33,15 @@
     </div>
 
     <!-- Section 3: WebAuthn Login -->
-    <div class="card">
-        <h3>3. WebAuthn Login</h3>
-        <p class="text-muted">Login using your registered authenticator.</p>
-        <div class="form-group">
-            <input type="text" id="login-username" placeholder="Username" class="form-control">
+    <!-- Section 3: WebAuthn Login (2FA) -->
+    <div class="card" id="2fa-section" style="display: none; border-left: 5px solid #007bff;">
+        <h3>2. Two-Factor Authentication</h3>
+        <p class="text-muted">Please verify your identity with your security key or biometrics.</p>
+
+        <div class="text-center" style="margin: 2rem 0;">
+            <div class="spinner" style="display: none;" id="2fa-spinner"></div>
+            <button onclick="loginWebAuthn()" class="btn btn-primary btn-lg" id="2fa-btn">Verify Identity</button>
         </div>
-        <button onclick="loginWebAuthn()" class="btn btn-primary">Login with Passkey/biometrics</button>
         <div id="login-msg" class="message"></div>
     </div>
 </div>
@@ -194,8 +196,26 @@
             body: JSON.stringify({ username: u, password: p })
         });
         const data = await res.json();
-        document.getElementById('password-msg').innerText = data.message;
-        updateStatus();
+
+        if (data.success) {
+            if (data.required_2fa) {
+                // Determine 2FA flow
+                document.getElementById('password-msg').innerText = data.message;
+                document.getElementById('password-msg').style.color = 'orange';
+
+                // Switch UI
+                document.getElementById('password-section').style.display = 'none';
+                document.getElementById('2fa-section').style.display = 'block';
+            } else {
+                // Normal login
+                document.getElementById('password-msg').innerText = data.message;
+                document.getElementById('password-msg').style.color = 'green';
+                updateStatus();
+            }
+        } else {
+            document.getElementById('password-msg').innerText = data.message;
+            document.getElementById('password-msg').style.color = 'red';
+        }
     }
 
     async function logout() {
@@ -204,6 +224,14 @@
         document.getElementById('setup-msg').innerText = '';
         document.getElementById('login-msg').innerText = '';
         document.getElementById('password-msg').innerText = 'Logged out.';
+
+        // Reset UI
+        document.getElementById('password-section').style.display = 'block';
+        document.getElementById('2fa-section').style.display = 'none';
+
+        // Clear inputs
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
     }
 
     // --- WebAuthn ---
@@ -270,7 +298,7 @@
     }
 
     async function loginWebAuthn() {
-        const u = document.getElementById('login-username').value;
+        // No username needed from input - it's in the session from step 1
         const msg = document.getElementById('login-msg');
 
         // CHECK: WebAuthn requires a domain, not an IP
@@ -287,7 +315,7 @@
             const res1 = await fetch('/exp7/webauthn/login/options', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: u })
+                body: JSON.stringify({}) // No username needed
             });
             const options = await res1.json();
 
@@ -311,7 +339,7 @@
 
             // 3. Send to backend
             const credentialData = {
-                username: u,
+                // username: u, // Not needed
                 id: credential.id,
                 rawId: bufferToBase64url(credential.rawId),
                 type: credential.type,
@@ -330,7 +358,15 @@
             const result = await res2.json();
             msg.innerText = result.message;
             msg.style.color = result.success ? 'green' : 'red';
-            updateStatus();
+
+            if (result.success) {
+                updateStatus();
+                setTimeout(() => {
+                    document.getElementById('2fa-section').style.display = 'none';
+                    document.getElementById('password-section').style.display = 'block'; // Reset for next time (or hide entirely)
+                    // Actually better to keep 2fa hidden and show logged in state
+                }, 1500);
+            }
 
         } catch (e) {
             console.error(e);

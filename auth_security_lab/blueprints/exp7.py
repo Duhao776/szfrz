@@ -67,8 +67,13 @@ def login_password():
     users = load_users()
     user = users.get(username)
     if user and user['password'] == password:
-        session['user'] = username
-        return jsonify({'success': True, 'message': 'Logged in with password'})
+        # Check if user has registered WebAuthn credentials
+        if user.get('credentials') and len(user['credentials']) > 0:
+            session['pre_2fa_user'] = username
+            return jsonify({'success': True, 'required_2fa': True, 'message': 'Password correct. 2FA required.'})
+        else:
+            session['user'] = username
+            return jsonify({'success': True, 'required_2fa': False, 'message': 'Logged in with password'})
     
     return jsonify({'success': False, 'message': 'Invalid credentials'})
 
@@ -143,14 +148,12 @@ def webauthn_register_complete():
 # 4. WebAuthn Login (Assertion) - Step 1: Get Options
 @exp7_bp.route('/webauthn/login/options', methods=['POST'])
 def webauthn_login_options():
-    data = request.get_json()
-    username = data.get('username')
+    # In 2FA flow, we know the user from the previous password step
+    username = session.get('pre_2fa_user')
     
     users = load_users()
     if not username or username not in users:
-        # In a real app we shouldn't reveal user existence, but for lab it's fine
-        # Or we can return a fake challenge
-        return jsonify({'success': False, 'message': 'User not found'})
+        return jsonify({'success': False, 'message': 'Session expired or invalid user'})
 
     challenge = secrets.token_bytes(32)
     challenge_b64 = base64url_encode(challenge)
@@ -175,13 +178,13 @@ def webauthn_login_options():
 # 4. WebAuthn Login - Step 2: Complete
 @exp7_bp.route('/webauthn/login/complete', methods=['POST'])
 def webauthn_login_complete():
+    username = session.get('pre_2fa_user')
+    if not username:
+        return jsonify({'success': False, 'message': 'Session expired'})
+        
     data = request.get_json()
-    username = data.get('username') 
     credential_id = data.get('id')
     
-    if not username:
-        return jsonify({'success': False, 'message': 'Username required'})
-
     # Simplified Verification: Check if credential ID belongs to user
     users = load_users()
     user = users.get(username)
@@ -196,7 +199,8 @@ def webauthn_login_complete():
             
     if valid_cred:
         session['user'] = username
-        return jsonify({'success': True, 'message': 'Logged in with WebAuthn'})
+        session.pop('pre_2fa_user', None) # Clear temp session
+        return jsonify({'success': True, 'message': '2FA Verification Successful'})
     else:
         return jsonify({'success': False, 'message': 'Invalid credential'})
 
